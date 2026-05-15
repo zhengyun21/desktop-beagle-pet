@@ -242,5 +242,9 @@ Enjoy! 🐾
 
 ---
 
+## ⭐ Star History / Star 历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=zhengyun21/desktop-beagle-pet&amp;type=Date)](https://star-history.com/#zhengyun21/desktop-beagle-pet&amp;Date)
+
 [![GitHub stars](https://img.shields.io/github/stars/zhengyun21/desktop-beagle-pet?style=social)](https://github.com/zhengyun21/desktop-beagle-pet/stargazers)
 
