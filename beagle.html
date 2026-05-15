@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>比格犬 · 酣睡守护者｜点击唤醒大狗叫</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 30% 40%, #cbdcc7, #a8bf9c);
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Quicksand', system-ui, 'SF Pro Text', monospace;
+            cursor: default;
+        }
+
+        /* 桌面层 */
+        .desktop {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 15% 25%, rgba(245, 235, 200, 0.2) 2%, transparent 2.5%),
+                              repeating-linear-gradient(45deg, rgba(180, 150, 120, 0.02) 0px, rgba(180, 150, 120, 0.02) 2px, transparent 2px, transparent 8px);
+            background-size: 36px 36px, 12px 12px;
+        }
+
+        /* 提示条 */
+        .desktop-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(35, 25, 22, 0.75);
+            backdrop-filter: blur(12px);
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #fef0da;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 225, 170, 0.5);
+            letter-spacing: 1px;
+            pointer-events: none;
+            z-index: 200;
+            white-space: nowrap;
+            font-family: monospace;
+        }
+
+        /* 宠物容器 */
+        .pet-container {
+            position: absolute;
+            cursor: pointer;
+            will-change: transform;
+            filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.2));
+            transition: filter 0.2s ease;
+            z-index: 150;
+        }
+        
+        .pet-container.dragging {
+            cursor: grabbing;
+        }
+
+        /* 睡觉时的柔和光晕 */
+        .pet-container.sleeping {
+            filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.15)) brightness(0.98);
+        }
+
+        /* 比格犬主容器 */
+        .beagle {
+            position: relative;
+            width: 220px;
+            height: 185px;
+            transform-origin: center bottom;
+        }
+
+        .beagle svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: visible;
+        }
+
+        /* ------ 睡眠专用动画: 轻柔起伏 + Zzz ------ */
+        @keyframes sleepyBreathe {
+            0%, 100% { transform: scale(1) translateY(0px); }
+            50% { transform: scale(1.01) translateY(-2px); }
+        }
+        .sleep-animation {
+            animation: sleepyBreathe 3.2s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        /* 睡眠时耳朵更下垂 (增加安逸感) */
+        @keyframes sleepEarDrop {
+            0%, 100% { transform: rotate(2deg) translateY(1px); }
+            50% { transform: rotate(-1deg) translateY(2px); }
+        }
+        .sleep-ear {
+            animation: sleepEarDrop 4s ease infinite;
+        }
+        
+        /* 睡眠Zzz浮动 */
+        .zzz-group {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-40%);
+            pointer-events: none;
+            opacity: 0.9;
+            font-family: monospace;
+            font-weight: bold;
+            z-index: 30;
+        }
+        .zzz {
+            position: absolute;
+            font-size: 22px;
+            color: #2c4c6e;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            animation: floatZzz 2.2s infinite ease-out;
+            opacity: 0;
+        }
+        .zzz1 { animation-delay: 0s; left: -12px; top: 0px; }
+        .zzz2 { animation-delay: 0.7s; left: 12px; top: -16px; font-size: 26px; }
+        .zzz3 { animation-delay: 1.4s; left: -8px; top: -32px; font-size: 30px;}
+        
+        @keyframes floatZzz {
+            0% { transform: translateY(10px) scale(0.5); opacity: 0; }
+            30% { opacity: 0.9; }
+            100% { transform: translateY(-38px) scale(1.2); opacity: 0; }
+        }
+        
+        /* 尾巴睡眠慵懒摆动 */
+        @keyframes sleepyTail {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .tail-sleep {
+            transform-origin: 172px 95px;
+            animation: sleepyTail 3.8s ease-in-out infinite;
+        }
+        
+        /* ----- 激动 / 大吼状态 (暴风摇尾 + 弹跳) ----- */
+        @keyframes barkJump {
+            0% { transform: scale(1) translateY(0); }
+            30% { transform: scale(1.08) translateY(-12px); }
+            70% { transform: scale(1.02) translateY(2px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .pet-container.barking .beagle {
+            animation: barkJump 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+        
+        @keyframes angryTailWag {
+            0% { transform: rotate(-28deg); }
+            50% { transform: rotate(28deg); }
+            100% { transform: rotate(-28deg); }
+        }
+        .pet-container.barking .wag-tail {
+            animation: angryTailWag 0.12s linear infinite !important;
+        }
+        
+        /* 大吼时耳朵快速扇动 */
+        @keyframes franticEar {
+            0% { transform: rotate(5deg); }
+            50% { transform: rotate(-8deg); }
+            100% { transform: rotate(5deg); }
+        }
+        .pet-container.barking .ear-left-move,
+        .pet-container.barking .ear-right-move {
+            animation: franticEar 0.12s infinite !important;
+        }
+
+        /* 吠叫时身形颤动配合SVG表情切换 */
+        .pet-container.barking {
+            filter: drop-shadow(0 0 8px rgba(220, 80, 40, 0.4));
+        }
+        
+        /* 声浪暴击特效 */
+        .bark-wave-area {
+            position: absolute;
+            right: -35px;
+            top: 20px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .pet-container.barking .bark-wave-area {
+            opacity: 1;
+        }
+        .bark-wave {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff7b4a, #ff3a1a);
+            opacity: 0.7;
+            animation: blastWave 0.5s ease-out forwards;
+        }
+        .bark-wave:nth-child(2){ animation-delay: 0.12s; left: -15px; top: 5px; width: 24px; height: 24px;}
+        .bark-wave:nth-child(3){ animation-delay: 0.24s; left: 5px; top: -8px; width: 28px; height: 28px;}
+        
+        @keyframes blastWave {
+            0% { transform: scale(0.2); opacity: 0.9; }
+            100% { transform: scale(2.8); opacity: 0; }
+        }
+
+        /* 巨吼时爱心冲击也更有力 */
+        .hearts-burst {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 100px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 25;
+        }
+        .pet-container.barking .hearts-burst {
+            opacity: 1;
+        }
+        .angry-heart {
+            position: absolute;
+            font-size: 28px;
+            animation: blastHeart 0.9s cubic-bezier(0.2, 1, 0.6, 1) forwards;
+            filter: drop-shadow(0 0 4px #ff4d4d);
+        }
+        @keyframes blastHeart {
+            0% { transform: translateY(0) scale(0.2) rotate(0deg); opacity: 1; }
+            60% { transform: translateY(-40px) scale(1.3) rotate(20deg); opacity: 0.9; }
+            100% { transform: translateY(-90px) scale(0.8) rotate(30deg); opacity: 0; }
+        }
+        
+        /* 气泡喊话 "汪汪!!" */
+        .bark-bubble {
+            position: absolute;
+            top: -58px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: #fff2db;
+            padding: 8px 20px;
+            border-radius: 60px;
+            font-size: 26px;
+            font-weight: 800;
+            color: #c03e2a;
+            white-space: nowrap;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.2);
+            border: 2px solid #ffad6a;
+            opacity: 0;
+            transition: transform 0.2s ease, opacity 0.1s;
+            pointer-events: none;
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+        .bark-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 60%;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 14px solid #fff2db;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+        }
+        .pet-container.barking .bark-bubble {
+            transform: translateX(-50%) scale(1.1);
+            opacity: 1;
+        }
+        
+        /* 阴影 */
+        .pet-shadow {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 22px;
+            background: radial-gradient(ellipse, rgba(0, 0, 0, 0.25) 20%, transparent 80%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        /* 防止拖拽时文本选中 */
+        .no-drag {
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+<div class="desktop">
+    <div class="desktop-hint">💤 比格犬在睡觉 · 点击它 → 超大声狂叫唤醒！🐕‍🦺 也可以拖拽移动</div>
+
+    <div class="pet-container sleeping" id="beaglePet">
+        <!-- 睡眠Zzz特效 -->
+        <div class="zzz-group">
+            <div class="zzz zzz1">Z</div>
+            <div class="zzz zzz2">z</div>
+            <div class="zzz zzz3">Z</div>
+        </div>
+        
+        <!-- 怒吼时的大字报 -->
+        <div class="bark-bubble" id="bigBarkText">🐕 汪汪!! 汪汪汪!!</div>
+        
+        <!-- 怒吼爱心爆裂区域 -->
+        <div class="hearts-burst" id="heartBurstArea"></div>
+        
+        <!-- 音波冲击特效 -->
+        <div class="bark-wave-area">
+            <div class="bark-wave"></div>
+            <div class="bark-wave"></div>
+            <div class="bark-wave"></div>
+        </div>
+        
+        <div class="beagle">
+            <svg viewBox="0 0 230 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="noseBlack" cx="35%" cy="35%">
+                        <stop offset="0%" stop-color="#6e402e"/>
+                        <stop offset="100%" stop-color="#2e1f18"/>
+                    </radialGradient>
+                </defs>
+
+                <!-- 地面阴影 -->
+                <ellipse cx="115" cy="178" rx="72" ry="10" fill="rgba(0,0,0,0.1)"/>
+
+                <!-- 尾巴组 (睡觉慵懒或激动切换class) -->
+                <g class="wag-tail tail-sleep" id="tailGroup">
+                    <path d="M178 102 Q202 80 192 55 Q187 46 180 52 Q170 66 172 95" fill="#edddca" stroke="#bc9d84" stroke-width="1.2"/>
+                    <path d="M188 68 Q194 62 192 57" stroke="#aa7f62" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- 后腿 -->
+                <ellipse cx="172" cy="156" rx="21" ry="13" fill="#e5cfb8"/>
+                <ellipse cx="180" cy="162" rx="14" ry="7" fill="#fcf5e8"/>
+                <ellipse cx="152" cy="160" rx="19" ry="12" fill="#e2c8ae"/>
+                <ellipse cx="149" cy="165" rx="13" ry="6" fill="#fcf5e8"/>
+
+                <!-- 身体呼吸主体 -->
+                <g class="sleep-animation" id="bodyGroup">
+                    <ellipse cx="112" cy="122" rx="78" ry="42" fill="#f8ecd9"/>
+                    <!-- 比格斑点 -->
+                    <ellipse cx="80" cy="113" rx="20" ry="13" fill="#dbb48b"/>
+                    <ellipse cx="142" cy="126" rx="16" ry="11" fill="#cf9f73"/>
+                    <ellipse cx="108" cy="134" rx="20" ry="10" fill="#ba8a5e" opacity="0.5"/>
+                    <ellipse cx="112" cy="138" rx="48" ry="19" fill="#fffaf0"/>
+                </g>
+
+                <!-- 前腿 -->
+                <ellipse cx="60" cy="158" rx="15" ry="17" fill="#f8ecd9"/>
+                <ellipse cx="56" cy="171" rx="12" ry="7" fill="#fff2e2"/>
+                <ellipse cx="86" cy="160" rx="14" ry="16" fill="#e5cfb8"/>
+                <ellipse cx="83" cy="172" rx="11" ry="6" fill="#fff2e2"/>
+
+                <!-- 头部 -->
+                <g>
+                    <ellipse cx="52" cy="83" rx="40" ry="35" fill="#f9ecd9"/>
+                    <!-- 额头深色斑纹 -->
+                    <path d="M28 71 Q54 54 78 71 Q62 63 52 66 Q40 63 28 71Z" fill="#bc8260" opacity="0.55"/>
+                    <ellipse cx="50" cy="95" rx="26" ry="22" fill="#fff9ef"/>
+                    
+                    <!-- 左耳 (睡眠时放松下垂) -->
+                    <g class="ear-left-move sleep-ear">
+                        <ellipse cx="16" cy="66" rx="18" ry="29" fill="#7c5d43" transform="rotate(-24 16 66)"/>
+                        <ellipse cx="18" cy="70" rx="11" ry="21" fill="#9b7556" transform="rotate(-22 18 70)"/>
+                    </g>
+                    <!-- 右耳 -->
+                    <g class="ear-right-move sleep-ear">
+                        <ellipse cx="86" cy="60" rx="18" ry="29" fill="#7c5d43" transform="rotate(26 86 60)"/>
+                        <ellipse cx="84" cy="64" rx="11" ry="21" fill="#9b7556" transform="rotate(28 84 64)"/>
+                    </g>
+
+                    <!-- 睡眠眼睛 (闭眼惬意的弧线) 默认显示！ -->
+                    <g id="sleepyEyes">
+                        <path d="M30 80 Q36 76 42 80" stroke="#5c3c2e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+                        <path d="M56 80 Q62 76 68 80" stroke="#5c3c2e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+                    </g>
+                    
+                    <!-- 大吼时的大眼睛 (凶狠明亮) 初始隐藏 -->
+                    <g id="angryEyes" style="display: none;">
+                        <ellipse cx="34" cy="80" rx="12" ry="13" fill="#ffffff"/>
+                        <ellipse cx="36" cy="81" rx="7" ry="8.5" fill="#34211c"/>
+                        <circle cx="39" cy="77" r="3.2" fill="white"/>
+                        <ellipse cx="64" cy="80" rx="12" ry="13" fill="#ffffff"/>
+                        <ellipse cx="66" cy="81" rx="7" ry="8.5" fill="#34211c"/>
+                        <circle cx="69" cy="77" r="3.2" fill="white"/>
+                        <!-- 愤怒眉骨 -->
+                        <path d="M26 70 L38 74 M72 70 L60 74" stroke="#4e3023" stroke-width="3" stroke-linecap="round"/>
+                    </g>
+                    
+                    <!-- 鼻子 -->
+                    <ellipse cx="51" cy="98" rx="9" ry="7" fill="url(#noseBlack)"/>
+                    <ellipse cx="49" cy="96" rx="3.5" ry="2.5" fill="#b48767"/>
+                    
+                    <!-- 睡觉嘴巴: 恬静小微笑 -->
+                    <path class="sleepy-mouth" d="M51 105 Q44 110 38 108" stroke="#7a563f" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                    <path class="sleepy-mouth" d="M51 105 Q58 110 64 108" stroke="#7a563f" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                    
+                    <!-- 大喊大叫的血盆大口 + 舌头 吼叫时显示 -->
+                    <g id="barkingMouth" style="display: none;">
+                        <ellipse cx="52" cy="110" rx="18" ry="14" fill="#552c1f"/>
+                        <ellipse cx="52" cy="116" rx="13" ry="10" fill="#e85c5c"/>
+                        <path d="M52 107 L52 128" stroke="#a13d3d" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M37 107 L28 112" stroke="#633d2b" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M67 107 L76 112" stroke="#633d2b" stroke-width="2" stroke-linecap="round"/>
+                        <!-- 吼叫时上牙龈露出 -->
+                        <path d="M38 104 L66 104" stroke="#efe0cf" stroke-width="3" stroke-linecap="round"/>
+                    </g>
+                    
+                    <!-- 睡眠时的轻微鼻息 -->
+                    <ellipse cx="44" cy="90" rx="4" ry="2.3" fill="#d79c7a" opacity="0.3"/>
+                </g>
+            </svg>
+        </div>
+        <div class="pet-shadow"></div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const petContainer = document.getElementById('beaglePet');
+        const bigBarkDiv = document.getElementById('bigBarkText');
+        const heartBurstArea = document.getElementById('heartBurstArea');
+        let audioCtx = null;
+        let isBarking = false;
+        let dragActive = false;
+        let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+        let currentX = window.innerWidth / 2 - 110;
+        let currentY = window.innerHeight / 2 - 70;
+        let targetX = currentX, targetY = currentY;
+        let draggingFlag = false;
+        let dragMoved = false;
+        
+        // 初始设置为睡眠模式
+        function setSleepMode() {
+            petContainer.classList.add('sleeping');
+            petContainer.classList.remove('barking');
+            const sleepyEyes = document.getElementById('sleepyEyes');
+            const angryEyes = document.getElementById('angryEyes');
+            const sleepyMouths = document.querySelectorAll('.sleepy-mouth');
+            const barkMouth = document.getElementById('barkingMouth');
+            if(sleepyEyes) sleepyEyes.style.display = 'block';
+            if(angryEyes) angryEyes.style.display = 'none';
+            sleepyMouths.forEach(m => m.style.display = 'block');
+            if(barkMouth) barkMouth.style.display = 'none';
+            // 切换尾巴状态变成慵懒动画class
+            const tailElem = document.getElementById('tailGroup');
+            if(tailElem) {
+                tailElem.classList.remove('wag-tail'); 
+                tailElem.classList.add('tail-sleep'); 
+            }
+        }
+        
+        // 大吼模式 (超级大声汪汪)
+        function setBarkingMode() {
+            if(isBarking) return;
+            isBarking = true;
+            petContainer.classList.remove('sleeping');
+            petContainer.classList.add('barking');
+            
+            // 切换五官: 睡觉眼睛隐藏, 凶凶大眼睛打开, 怒吼嘴巴打开
+            const sleepyEyes = document.getElementById('sleepyEyes');
+            const angryEyes = document.getElementById('angryEyes');
+            const sleepyMouths = document.querySelectorAll('.sleepy-mouth');
+            const barkMouth = document.getElementById('barkingMouth');
+            if(sleepyEyes) sleepyEyes.style.display = 'none';
+            if(angryEyes) angryEyes.style.display = 'block';
+            sleepyMouths.forEach(m => m.style.display = 'none');
+            if(barkMouth) barkMouth.style.display = 'block';
+            
+            // 尾巴变成超快速摆动专用 class (先去除睡眠尾，添加激动尾)
+            const tailElem = document.getElementById('tailGroup');
+            if(tailElem) {
+                tailElem.classList.remove('tail-sleep');
+                tailElem.classList.add('wag-tail');
+            }
+            
+            // 制造爱心爆炸冲击特效
+            createBarkHearts(12);
+            // 播放巨声汪汪叫 (多次合成吼叫)
+            playLoudBarkSequence();
+            
+            // 设定1.5秒后回到睡眠状态 (重新入睡)
+            setTimeout(() => {
+                if(isBarking) {
+                    isBarking = false;
+                    petContainer.classList.remove('barking');
+                    setSleepMode();
+                }
+            }, 1500);
+        }
+        
+        // 用力汪汪叫合成音频 + 低沉大狗怒吼感
+        function playLoudBarkSequence() {
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) { return; }
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(e=>console.log("need interaction"));
+            }
+            const now = audioCtx.currentTime;
+            // 大狗怒吼式 三连吼 + 低频共振
+            for(let i=0; i<3; i++) {
+                const delay = i * 0.22;
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                osc.type = 'sawtooth';
+                // 低频 厚重感 450 -> 200hz
+                osc.frequency.setValueAtTime(480 - i * 40, now + delay);
+                osc.frequency.exponentialRampToValueAtTime(210, now + delay + 0.38);
+                filter.type = 'lowpass';
+                filter.frequency.value = 1400;
+                filter.Q.value = 1.8;
+                gainNode.gain.setValueAtTime(0.42, now + delay);
+                gainNode.gain.exponentialRampToValueAtTime(0.003, now + delay + 0.5);
+                osc.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                osc.start(now + delay);
+                osc.stop(now + delay + 0.52);
+            }
+            // 额外的巨吼低音 增加震撼
+            const subOsc = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+            subOsc.type = 'triangle';
+            subOsc.frequency.setValueAtTime(170, now + 0.1);
+            subOsc.frequency.exponentialRampToValueAtTime(110, now + 0.7);
+            subGain.gain.setValueAtTime(0.28, now + 0.1);
+            subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.85);
+            subOsc.connect(subGain);
+            subGain.connect(audioCtx.destination);
+            subOsc.start(now + 0.1);
+            subOsc.stop(now + 0.9);
+        }
+        
+        // 爆裂爱心冲击（狂叫情感）
+        function createBarkHearts(count = 14) {
+            heartBurstArea.innerHTML = '';
+            for(let i=0; i<count; i++) {
+                const heartSpan = document.createElement('div');
+                heartSpan.classList.add('angry-heart');
+                const icons = ['💢', '❤️‍🔥', '💥', '🗯️', '🐕‍🦺', '🔊'];
+                heartSpan.textContent = icons[Math.floor(Math.random() * icons.length)];
+                const offsetX = (Math.random() - 0.5) * 100;
+                heartSpan.style.left = `calc(50% + ${offsetX}px)`;
+                heartSpan.style.top = `${Math.random() * 20}px`;
+                heartSpan.style.fontSize = `${24 + Math.random() * 16}px`;
+                heartBurstArea.appendChild(heartSpan);
+                setTimeout(() => heartSpan.remove(), 850);
+            }
+            // 动态修改文字
+            const barksText = ['🐕‍🦺 汪汪!! 吼!!', '⚡ 大狗怒吼!! ⚡', '🔊 汪!!!!! 汪 🔊', '💢 超大声！！ 💢'];
+            bigBarkDiv.textContent = barksText[Math.floor(Math.random() * barksText.length)];
+        }
+        
+        // ---------- 拖拽交互 (宠物可移动且睡眠模式依然可拖拽但是不打断睡眠, 但是唤醒必须点击) ----------
+        function constrainPet(x, y) {
+            const limitX = Math.max(12, Math.min(window.innerWidth - 225, x));
+            const limitY = Math.max(15, Math.min(window.innerHeight - 195, y));
+            return { x: limitX, y: limitY };
+        }
+        
+        function updateTransform() {
+            petContainer.style.transform = `translate(${currentX}px, ${currentY}px)`;
+        }
+        
+        let animationFrame;
+        function smoothMove() {
+            const dx = targetX - currentX;
+            const dy = targetY - currentY;
+            if(Math.abs(dx) > 0.2 || Math.abs(dy) > 0.2) {
+                currentX += dx * 0.2;
+                currentY += dy * 0.2;
+                updateTransform();
+            } else {
+                currentX = targetX;
+                currentY = targetY;
+                updateTransform();
+            }
+            requestAnimationFrame(smoothMove);
+        }
+        
+        function initDrag() {
+            petContainer.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                dragActive = true;
+                dragMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = targetX;
+                initialTop = targetY;
+                petContainer.style.cursor = 'grabbing';
+                petContainer.classList.add('dragging');
+            });
+            window.addEventListener('mousemove', (e) => {
+                if(!dragActive) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                if(Math.abs(dx) > 5 || Math.abs(dy) > 5) dragMoved = true;
+                let newX = initialLeft + dx;
+                let newY = initialTop + dy;
+                const constrained = constrainPet(newX, newY);
+                targetX = constrained.x;
+                targetY = constrained.y;
+            });
+            window.addEventListener('mouseup', (e) => {
+                if(!dragActive) return;
+                dragActive = false;
+                petContainer.style.cursor = 'pointer';
+                petContainer.classList.remove('dragging');
+                // 如果没有移动过，并且不是拖拽移动，那么作为点击唤醒
+                if(!dragMoved && !isBarking) {
+                    // 点击唤醒大狗叫！！！！！
+                    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                    setBarkingMode();
+                }
+                dragMoved = false;
+            });
+            // touch 移动端支持
+            petContainer.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                e.preventDefault();
+                dragActive = true;
+                dragMoved = false;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                initialLeft = targetX;
+                initialTop = targetY;
+                petContainer.style.cursor = 'grabbing';
+            });
+            window.addEventListener('touchmove', (e) => {
+                if(!dragActive) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                if(Math.abs(dx) > 5 || Math.abs(dy) > 5) dragMoved = true;
+                let newX = initialLeft + dx;
+                let newY = initialTop + dy;
+                const constrained = constrainPet(newX, newY);
+                targetX = constrained.x;
+                targetY = constrained.y;
+                e.preventDefault();
+            });
+            window.addEventListener('touchend', (e) => {
+                if(!dragActive) return;
+                dragActive = false;
+                petContainer.style.cursor = 'pointer';
+                if(!dragMoved && !isBarking) {
+                    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                    setBarkingMode();
+                }
+                dragMoved = false;
+            });
+        }
+        
+        function initPositionAndResize() {
+            const initPos = constrainPet(window.innerWidth/2 - 110, window.innerHeight/2 - 70);
+            targetX = initPos.x;
+            targetY = initPos.y;
+            currentX = targetX;
+            currentY = targetY;
+            updateTransform();
+            window.addEventListener('resize', () => {
+                const fixed = constrainPet(targetX, targetY);
+                targetX = fixed.x;
+                targetY = fixed.y;
+                currentX = targetX;
+                currentY = targetY;
+                updateTransform();
+            });
+        }
+        
+        // 唤醒音频预加载 (首次任意手势激活音频上下文)
+        document.body.addEventListener('click', () => {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } else if(audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }, { once: false });
+        
+        setSleepMode();
+        initDrag();
+        initPositionAndResize();
+        smoothMove();
+    })();
+</script>
+</body>
+</html>

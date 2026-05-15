@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比格犬桌面宠物</title>
+    <style>
+        :root {
+            --beige-body: #F5E6D3;
+            --beige-light: #FFF8F0;
+            --brown-dark: #5D4037;
+            --brown-mid: #8D6E63;
+            --brown-light: #A1887F;
+            --pink-tongue: #E57373;
+            --pink-nose: #4E342E;
+            --white: #FFFFFF;
+            --bg-desktop: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-desktop);
+            overflow: hidden;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .desktop {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .desktop-hint {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            color: #5D4037;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            opacity: 0.8;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .pet-container {
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.05s ease-out;
+            z-index: 100;
+        }
+
+        .pet-container:active {
+            cursor: grabbing;
+        }
+
+        .pet-container.excited {
+            cursor: pointer;
+        }
+
+        .beagle {
+            position: relative;
+            width: 200px;
+            height: 160px;
+            transform-origin: center bottom;
+        }
+
+        .beagle svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        /* Body breathing animation */
+        @keyframes breathe {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.02); }
+        }
+
+        .beagle-body {
+            animation: breathe 3s ease-in-out infinite;
+            transform-origin: center center;
+        }
+
+        /* Tail wagging */
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(-10deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        .beagle-tail {
+            transform-origin: left center;
+            animation: tailWag 0.5s ease-in-out infinite;
+        }
+
+        /* Ear bounce */
+        @keyframes earBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-3px) rotate(2deg); }
+        }
+
+        .beagle-ear-left, .beagle-ear-right {
+            transform-origin: top center;
+            animation: earBounce 2s ease-in-out infinite;
+        }
+
+        .beagle-ear-right {
+            animation-delay: 0.5s;
+        }
+
+        /* Idle eye blink */
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        .beagle-eye {
+            transform-origin: center center;
+            animation: blink 4s ease-in-out infinite;
+        }
+
+        /* Excited state */
+        .pet-container.excited .beagle {
+            animation: excitedBounce 0.3s ease-out;
+        }
+
+        @keyframes excitedBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1) translateY(-10px); }
+            100% { transform: scale(1); }
+        }
+
+        .pet-container.excited .beagle-tail {
+            animation: tailWagFast 0.15s ease-in-out infinite;
+        }
+
+        @keyframes tailWagFast {
+            0%, 100% { transform: rotate(-20deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        /* Hover effect */
+        .pet-container:hover .beagle-ear-left,
+        .pet-container:hover .beagle-ear-right {
+            animation-duration: 0.8s;
+        }
+
+        /* Shadow */
+        .pet-shadow {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 20px;
+            background: radial-gradient(ellipse, rgba(0, 0, 0, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        /* Speech bubble */
+        .speech-bubble {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: white;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            color: #5D4037;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        .pet-container.excited .speech-bubble {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        /* Hearts animation */
+        .hearts {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .pet-container.excited .hearts {
+            opacity: 1;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 16px;
+            animation: floatHeart 1s ease-out forwards;
+        }
+
+        @keyframes floatHeart {
+            0% {
+                transform: translateY(0) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-60px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Sound waves */
+        .sound-waves {
+            position: absolute;
+            right: -30px;
+            top: 30px;
+            opacity: 0;
+        }
+
+        .pet-container.excited .sound-waves {
+            opacity: 1;
+        }
+
+        .sound-wave {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 2px solid #E57373;
+            border-radius: 50%;
+            animation: soundWave 0.8s ease-out infinite;
+        }
+
+        .sound-wave:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .sound-wave:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes soundWave {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop">
+        <div class="desktop-hint">拖拽移动比格犬 · 点击让它叫一声</div>
+
+        <div class="pet-container" id="pet">
+            <div class="speech-bubble">汪汪！</div>
+
+            <div class="hearts" id="hearts"></div>
+
+            <div class="sound-waves">
+                <div class="sound-wave"></div>
+                <div class="sound-wave"></div>
+                <div class="sound-wave"></div>
+            </div>
+
+            <div class="beagle">
+                <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Shadow on ground -->
+                    <ellipse cx="100" cy="155" rx="60" ry="8" fill="rgba(0,0,0,0.1)"/>
+
+                    <!-- Tail -->
+                    <g class="beagle-tail">
+                        <path d="M160 90 Q180 70 175 50 Q172 45 165 50 Q155 60 155 85"
+                              fill="#F5E6D3" stroke="#D7CCC8" stroke-width="1"/>
+                    </g>
+
+                    <!-- Back legs -->
+                    <ellipse cx="150" cy="135" rx="18" ry="12" fill="#E8D5C4"/>
+                    <ellipse cx="155" cy="140" rx="12" ry="8" fill="#F5E6D3"/>
+
+                    <!-- Body -->
+                    <g class="beagle-body">
+                        <ellipse cx="100" cy="110" rx="65" ry="35" fill="#F5E6D3"/>
+                        <!-- Body spots (beagle pattern) -->
+                        <ellipse cx="80" cy="105" rx="15" ry="10" fill="#E8D5C4"/>
+                        <ellipse cx="120" cy="115" rx="12" ry="8" fill="#E8D5C4"/>
+                        <!-- White belly -->
+                        <ellipse cx="100" cy="120" rx="40" ry="15" fill="#FFF8F0"/>
+                    </g>
+
+                    <!-- Front legs -->
+                    <ellipse cx="55" cy="138" rx="12" ry="15" fill="#F5E6D3"/>
+                    <ellipse cx="52" cy="148" rx="10" ry="6" fill="#FFF8F0"/>
+
+                    <ellipse cx="75" cy="140" rx="10" ry="12" fill="#E8D5C4"/>
+                    <ellipse cx="73" cy="150" rx="8" ry="5" fill="#FFF8F0"/>
+
+                    <!-- Head -->
+                    <g class="beagle-head">
+                        <ellipse cx="45" cy="70" rx="35" ry="30" fill="#F5E6D3"/>
+                        <!-- White face patch -->
+                        <ellipse cx="40" cy="80" rx="20" ry="18" fill="#FFF8F0"/>
+
+                        <!-- Ears -->
+                        <g class="beagle-ear-left">
+                            <ellipse cx="15" cy="55" rx="15" ry="25" fill="#8D6E63" transform="rotate(-20 15 55)"/>
+                            <ellipse cx="17" cy="58" rx="10" ry="18" fill="#A1887F" transform="rotate(-20 17 58)"/>
+                        </g>
+                        <g class="beagle-ear-right">
+                            <ellipse cx="75" cy="50" rx="15" ry="25" fill="#8D6E63" transform="rotate(20 75 50)"/>
+                            <ellipse cx="73" cy="53" rx="10" ry="18" fill="#A1887F" transform="rotate(20 73 53)"/>
+                        </g>
+
+                        <!-- Eyes -->
+                        <g class="beagle-eye">
+                            <ellipse cx="35" cy="65" rx="8" ry="9" fill="#FFFFFF"/>
+                            <ellipse cx="36" cy="66" rx="5" ry="6" fill="#5D4037"/>
+                            <ellipse cx="37" cy="64" rx="2" ry="2" fill="#FFFFFF"/>
+                        </g>
+                        <g class="beagle-eye">
+                            <ellipse cx="55" cy="65" rx="8" ry="9" fill="#FFFFFF"/>
+                            <ellipse cx="56" cy="66" rx="5" ry="6" fill="#5D4037"/>
+                            <ellipse cx="57" cy="64" rx="2" ry="2" fill="#FFFFFF"/>
+                        </g>
+
+                        <!-- Excited eyes (larger) -->
+                        <g class="beagle-eye-excited" style="display: none;">
+                            <ellipse cx="35" cy="65" rx="10" ry="11" fill="#FFFFFF"/>
+                            <ellipse cx="36" cy="66" rx="7" ry="8" fill="#5D4037"/>
+                            <ellipse cx="38" cy="63" rx="3" ry="3" fill="#FFFFFF"/>
+                        </g>
+                        <g class="beagle-eye-excited" style="display: none;">
+                            <ellipse cx="55" cy="65" rx="10" ry="11" fill="#FFFFFF"/>
+                            <ellipse cx="56" cy="66" rx="7" ry="8" fill="#5D4037"/>
+                            <ellipse cx="58" cy="63" rx="3" ry="3" fill="#FFFFFF"/>
+                        </g>
+
+                        <!-- Eyebrows -->
+                        <path d="M28 55 Q35 52 42 55" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M48 55 Q55 52 62 55" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+                        <!-- Nose -->
+                        <ellipse cx="45" cy="82" rx="8" ry="6" fill="#4E342E"/>
+                        <ellipse cx="44" cy="80" rx="3" ry="2" fill="#6D4C41"/>
+
+                        <!-- Mouth - Normal -->
+                        <path class="mouth-normal" d="M45 88 Q38 95 32 92" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path class="mouth-normal" d="M45 88 Q52 95 58 92" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+                        <!-- Mouth - Excited (open with tongue) -->
+                        <g class="mouth-excited" style="display: none;">
+                            <ellipse cx="45" cy="92" rx="12" ry="8" fill="#5D4037"/>
+                            <ellipse cx="45" cy="95" rx="8" ry="6" fill="#E57373"/>
+                            <path d="M45 88 Q40 92 37 90" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <path d="M45 88 Q50 92 53 90" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="pet-shadow"></div>
+        </div>
+    </div>
+
+    <script>
+        const pet = document.getElementById('pet');
+        const heartsContainer = document.getElementById('hearts');
+
+        let isDragging = false;
+        let isExcited = false;
+        let currentX = window.innerWidth / 2 - 100;
+        let currentY = window.innerHeight / 2;
+        let targetX = currentX;
+        let targetY = currentY;
+        let startX, startY;
+
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBarkSound() {
+            initAudio();
+
+            const duration = 0.3;
+            const now = audioContext.currentTime;
+
+            for (let i = 0; i < 3; i++) {
+                const startTime = now + i * 0.15;
+
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(400 + Math.random() * 100, startTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, startTime + duration);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1500, startTime);
+
+                gainNode.gain.setValueAtTime(0.3, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+                oscillator.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            }
+        }
+
+        function createHeart() {
+            const heart = document.createElement('span');
+            heart.className = 'heart';
+            heart.textContent = '❤️';
+            heart.style.left = (Math.random() * 60 - 30) + 'px';
+            heart.style.animationDelay = (Math.random() * 0.3) + 's';
+            heartsContainer.appendChild(heart);
+
+            setTimeout(() => heart.remove(), 1000);
+        }
+
+        function setExcited(excited) {
+            isExcited = excited;
+            pet.classList.toggle('excited', excited);
+
+            const normalEyes = pet.querySelectorAll('.beagle-eye');
+            const excitedEyes = pet.querySelectorAll('.beagle-eye-excited');
+            const normalMouth = pet.querySelector('.mouth-normal');
+            const excitedMouth = pet.querySelector('.mouth-excited');
+
+            normalEyes.forEach(eye => eye.style.display = excited ? 'none' : 'block');
+            excitedEyes.forEach(eye => eye.style.display = excited ? 'block' : 'none');
+            if (normalMouth) normalMouth.style.display = excited ? 'none' : 'block';
+            if (excitedMouth) excitedMouth.style.display = excited ? 'block' : 'none';
+
+            if (excited) {
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => createHeart(), i * 100);
+                }
+            }
+        }
+
+        function constrainPosition(x, y) {
+            const padding = 20;
+            const petWidth = 200;
+            const petHeight = 160;
+
+            return {
+                x: Math.max(padding, Math.min(window.innerWidth - petWidth - padding, x)),
+                y: Math.max(padding, Math.min(window.innerHeight - petHeight - padding, y))
+            };
+        }
+
+        function animate() {
+            const easedX = currentX + (targetX - currentX) * 0.15;
+            const easedY = currentY + (targetY - currentY) * 0.15;
+
+            if (Math.abs(targetX - currentX) > 0.5 || Math.abs(targetY - currentY) > 0.5) {
+                currentX = easedX;
+                currentY = easedY;
+                pet.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        pet.addEventListener('mousedown', (e) => {
+            if (isExcited) return;
+
+            isDragging = true;
+            startX = e.clientX - targetX;
+            startY = e.clientY - targetY;
+            pet.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const newX = e.clientX - startX;
+            const newY = e.clientY - startY;
+            const constrained = constrainPosition(newX, newY);
+
+            targetX = constrained.x;
+            targetY = constrained.y;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                pet.style.cursor = 'grab';
+            }
+        });
+
+        pet.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.stopPropagation();
+                return;
+            }
+
+            if (!isExcited) {
+                playBarkSound();
+                setExcited(true);
+
+                setTimeout(() => {
+                    setExcited(false);
+                }, 1500);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            const constrained = constrainPosition(targetX, targetY);
+            targetX = constrained.x;
+            targetY = constrained.y;
+        });
+
+        const initialPos = constrainPosition(
+            window.innerWidth / 2 - 100,
+            window.innerHeight / 2 - 50
+        );
+        targetX = initialPos.x;
+        targetY = initialPos.y;
+        currentX = targetX;
+        currentY = targetY;
+        pet.style.transform = `translate(${currentX}px, ${currentY}px)`;
+
+        animate();
+    </script>
+</body>
+</html>

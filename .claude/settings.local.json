@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(identify \"D:/Maven/desktop-dog-pet/src/睡觉比格犬.png\")",
+      "Bash(magick identify *)",
+      "Bash(start *)",
+      "Bash(npm start *)",
+      "Bash(git -C \"D:\\\\maven\\\\desktop-dog-pet\" status)"
+    ]
+  }
+}

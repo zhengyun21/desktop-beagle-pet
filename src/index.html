@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <title>桌面宠物</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .desktop-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .pet-container {
+            position: absolute;
+            width: 200px;
+            height: 160px;
+            cursor: grab;
+            user-select: none;
+            pointer-events: auto;
+            transform-origin: center bottom;
+            transition: filter 0.2s;
+        }
+
+        .pet-container:active {
+            cursor: grabbing;
+        }
+
+        .pet-container:hover {
+            filter: brightness(1.05);
+        }
+
+        .pet-container.excited {
+            animation: excitedBounce 0.3s ease-out;
+        }
+
+        @keyframes excitedBounce {
+            0% { transform: translate(var(--pet-x), var(--pet-y)) scale(1); }
+            50% { transform: translate(var(--pet-x), var(--pet-y)) scale(1.1); }
+            100% { transform: translate(var(--pet-x), var(--pet-y)) scale(1); }
+        }
+
+        .beagle {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .beagle svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.02); }
+        }
+
+        .beagle-body {
+            animation: breathe 3s ease-in-out infinite;
+            transform-origin: center center;
+        }
+
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(-10deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        .beagle-tail {
+            transform-origin: left center;
+            animation: tailWag 0.5s ease-in-out infinite;
+        }
+
+        @keyframes earBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-3px) rotate(2deg); }
+        }
+
+        .beagle-ear-left, .beagle-ear-right {
+            transform-origin: top center;
+            animation: earBounce 2s ease-in-out infinite;
+        }
+
+        .beagle-ear-right {
+            animation-delay: 0.5s;
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        .beagle-eye {
+            transform-origin: center center;
+            animation: blink 4s ease-in-out infinite;
+        }
+
+        .pet-shadow {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 20px;
+            background: radial-gradient(ellipse, rgba(0, 0, 0, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: white;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            color: #5D4037;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        .pet-container.excited .speech-bubble {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        .hearts {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 5;
+        }
+
+        .pet-container.excited .hearts {
+            opacity: 1;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 18px;
+            animation: floatHeart 1s ease-out forwards;
+        }
+
+        @keyframes floatHeart {
+            0% { transform: translateY(0) scale(0); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1); opacity: 0; }
+        }
+
+
+
+        .custom-pet-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center center;
+            pointer-events: none;
+        }
+
+        .custom-pet-gif {
+            width: 100%;
+            height: 100%;
+        }
+
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop-layer"></div>
+
+    <div class="pet-container" id="pet" style="--pet-x: 0px; --pet-y: 0px;">
+            <div class="speech-bubble" id="speechBubble">汪汪！</div>
+            <div class="hearts" id="hearts"></div>
+
+            <div class="beagle" id="beagleContainer">
+                <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg" id="beagleSvg">
+                    <g transform="translate(20, 0)">
+                        <g class="beagle-tail">
+                            <path d="M160 90 Q180 70 175 50 Q172 45 165 50 Q155 60 155 85" fill="#F5E6D3" stroke="#D7CCC8" stroke-width="1"/>
+                        </g>
+
+                        <ellipse cx="150" cy="135" rx="18" ry="12" fill="#E8D5C4"/>
+                        <ellipse cx="155" cy="140" rx="12" ry="8" fill="#F5E6D3"/>
+
+                        <g class="beagle-body">
+                            <ellipse cx="100" cy="110" rx="65" ry="35" fill="#F5E6D3"/>
+                            <ellipse cx="80" cy="105" rx="15" ry="10" fill="#E8D5C4"/>
+                            <ellipse cx="120" cy="115" rx="12" ry="8" fill="#E8D5C4"/>
+                            <ellipse cx="100" cy="120" rx="40" ry="15" fill="#FFF8F0"/>
+                        </g>
+
+                        <ellipse cx="55" cy="138" rx="12" ry="15" fill="#F5E6D3"/>
+                        <ellipse cx="52" cy="148" rx="10" ry="6" fill="#FFF8F0"/>
+                        <ellipse cx="75" cy="140" rx="10" ry="12" fill="#E8D5C4"/>
+                        <ellipse cx="73" cy="150" rx="8" ry="5" fill="#FFF8F0"/>
+
+                        <g class="beagle-head">
+                            <ellipse cx="45" cy="70" rx="35" ry="30" fill="#F5E6D3"/>
+                            <ellipse cx="40" cy="80" rx="20" ry="18" fill="#FFF8F0"/>
+
+                            <g class="beagle-ear-left">
+                                <ellipse cx="15" cy="55" rx="15" ry="25" fill="#8D6E63" transform="rotate(-20 15 55)"/>
+                                <ellipse cx="17" cy="58" rx="10" ry="18" fill="#A1887F" transform="rotate(-20 17 58)"/>
+                            </g>
+                            <g class="beagle-ear-right">
+                                <ellipse cx="75" cy="50" rx="15" ry="25" fill="#8D6E63" transform="rotate(20 75 50)"/>
+                                <ellipse cx="73" cy="53" rx="10" ry="18" fill="#A1887F" transform="rotate(20 73 53)"/>
+                            </g>
+
+                            <g class="beagle-eye">
+                                <ellipse cx="35" cy="65" rx="8" ry="9" fill="#FFFFFF"/>
+                                <ellipse cx="36" cy="66" rx="5" ry="6" fill="#5D4037"/>
+                                <ellipse cx="37" cy="64" rx="2" ry="2" fill="#FFFFFF"/>
+                            </g>
+                            <g class="beagle-eye">
+                                <ellipse cx="55" cy="65" rx="8" ry="9" fill="#FFFFFF"/>
+                                <ellipse cx="56" cy="66" rx="5" ry="6" fill="#5D4037"/>
+                                <ellipse cx="57" cy="64" rx="2" ry="2" fill="#FFFFFF"/>
+                            </g>
+
+                            <g class="beagle-eye-excited" style="display: none;">
+                                <ellipse cx="35" cy="65" rx="10" ry="11" fill="#FFFFFF"/>
+                                <ellipse cx="36" cy="66" rx="7" ry="8" fill="#5D4037"/>
+                                <ellipse cx="38" cy="63" rx="3" ry="3" fill="#FFFFFF"/>
+                            </g>
+                            <g class="beagle-eye-excited" style="display: none;">
+                                <ellipse cx="55" cy="65" rx="10" ry="11" fill="#FFFFFF"/>
+                                <ellipse cx="56" cy="66" rx="7" ry="8" fill="#5D4037"/>
+                                <ellipse cx="58" cy="63" rx="3" ry="3" fill="#FFFFFF"/>
+                            </g>
+
+                            <path d="M28 55 Q35 52 42 55" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <path d="M48 55 Q55 52 62 55" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+                            <ellipse cx="45" cy="82" rx="8" ry="6" fill="#4E342E"/>
+                            <ellipse cx="44" cy="80" rx="3" ry="2" fill="#6D4C41"/>
+
+                            <path class="mouth-normal" d="M45 88 Q38 95 32 92" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <path class="mouth-normal" d="M45 88 Q52 95 58 92" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+                            <g class="mouth-excited" style="display: none;">
+                                <ellipse cx="45" cy="92" rx="12" ry="8" fill="#5D4037"/>
+                                <ellipse cx="45" cy="95" rx="8" ry="6" fill="#E57373"/>
+                                <path d="M45 88 Q40 92 37 90" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                                <path d="M45 88 Q50 92 53 90" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+
+                <img id="customPetImage" class="custom-pet-image" style="display: none;" alt="Custom Pet">
+                <img id="customPetExcitedImage" class="custom-pet-image" style="display: none;" alt="Custom Pet Excited">
+            </div>
+
+            <div class="pet-shadow"></div>
+        </div>
+
+    <div class="debug-info" id="debugInfo"></div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

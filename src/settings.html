@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <title>桌面宠物设置</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #FFF8F0 0%, #F5E6D3 100%);
+            min-height: 100vh;
+            color: #5D4037;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #E8D5C4;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #5D4037;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            background: #FFF8F0;
+            border: 2px solid #E8D5C4;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #8D6E63;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: #F5E6D3;
+        }
+
+        .tab.active {
+            background: #5D4037;
+            border-color: #5D4037;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(93, 64, 55, 0.1);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #5D4037;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: #E57373;
+            border-radius: 2px;
+        }
+
+        .pet-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .preview-image {
+            width: 150px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 12px;
+        }
+
+        .preview-placeholder {
+            width: 150px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8D6E63;
+            font-size: 14px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .preview-label {
+            font-size: 13px;
+            color: #8D6E63;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #5D4037;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4E342E;
+        }
+
+        .btn-secondary {
+            background: #E8D5C4;
+            color: #5D4037;
+        }
+
+        .btn-secondary:hover {
+            background: #D7CCC8;
+        }
+
+        .btn-danger {
+            background: #FFEBEE;
+            color: #E57373;
+        }
+
+        .btn-danger:hover {
+            background: #FFCDD2;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .sound-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .sound-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #FFF8F0;
+            border-radius: 8px;
+        }
+
+        .sound-item.playing {
+            background: #E8F5E9;
+        }
+
+        .sound-item.selected {
+            background: #E3F2FD;
+            border: 2px solid #2196F3;
+        }
+
+        .sound-icon {
+            width: 32px;
+            height: 32px;
+            background: #E57373;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+
+        .sound-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sound-name {
+            font-size: 14px;
+            color: #5D4037;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sound-type {
+            font-size: 12px;
+            color: #A1887F;
+        }
+
+        .sound-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #E8D5C4;
+        }
+
+        .toggle-container:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            color: #5D4037;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            background: #D7CCC8;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: #81C784;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(22px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #A1887F;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .current-pet {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            background: #FFF8F0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .current-pet-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            background: #E8F5E9;
+            border-radius: 8px;
+        }
+
+        .current-pet-info {
+            flex: 1;
+        }
+
+        .current-pet-name {
+            font-size: 14px;
+            color: #5D4037;
+            font-weight: 500;
+        }
+
+        .current-pet-type {
+            font-size: 12px;
+            color: #A1887F;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #E8D5C4;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #A1887F;
+        }
+
+        .version {
+            font-size: 11px;
+            color: #D7CCC8;
+            margin-top: 4px;
+        }
+
+        .reminder-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #FFF8F0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .reminder-item.disabled {
+            opacity: 0.5;
+        }
+
+        .reminder-icon {
+            width: 32px;
+            height: 32px;
+            background: #FFE0B2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .reminder-info {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-weight: 600;
+            color: #5D4037;
+            margin-bottom: 2px;
+        }
+
+        .reminder-time {
+            font-size: 12px;
+            color: #8D6E63;
+        }
+
+        .reminder-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .reminder-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .reminder-modal.show {
+            display: flex;
+        }
+
+        .reminder-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .reminder-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #5D4037;
+        }
+
+        .reminder-form-group {
+            margin-bottom: 16px;
+        }
+
+        .reminder-form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #5D4037;
+        }
+
+        .reminder-form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #E8D5C4;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #FFF8F0;
+            color: #5D4037;
+        }
+
+        .reminder-form-input:focus {
+            outline: none;
+            border-color: #5D4037;
+        }
+
+        .reminder-form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <svg class="header-icon" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="18" fill="#F5E6D3"/>
+                    <ellipse cx="14" cy="18" rx="3" ry="3.5" fill="#5D4037"/>
+                    <ellipse cx="26" cy="18" rx="3" ry="3.5" fill="#5D4037"/>
+                    <ellipse cx="20" cy="26" rx="4" ry="3" fill="#4E342E"/>
+                    <path d="M15 30 Q20 34 25 30" stroke="#8D6E63" stroke-width="2" fill="none"/>
+                </svg>
+                桌面宠物设置
+            </h1>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="appearance" data-i18n="settings.tabs.appearance">外观设置</div>
+            <div class="tab" data-tab="sounds" data-i18n="settings.tabs.sounds">音效设置</div>
+            <div class="tab" data-tab="reminders" data-i18n="settings.tabs.reminders">定时提醒</div>
+            <div class="tab" data-tab="general" data-i18n="settings.tabs.general">通用设置</div>
+        </div>
+
+        <div class="tab-content active" id="appearance">
+            <div class="section">
+                <div class="section-title" data-i18n="settings.appearance.current">当前宠物</div>
+                <div class="current-pet" id="currentPet">
+                    <img src="" class="current-pet-image" id="currentPetImage" style="display: none;">
+                    <div class="preview-placeholder" id="currentPetPlaceholder">
+                        <svg width="60" height="60" viewBox="0 0 60 60">
+                            <ellipse cx="30" cy="35" rx="20" ry="12" fill="#F5E6D3"/>
+                            <ellipse cx="30" cy="25" rx="15" ry="12" fill="#F5E6D3"/>
+                            <ellipse cx="12" cy="18" rx="6" ry="10" fill="#8D6E63"/>
+                            <ellipse cx="48" cy="18" rx="6" ry="10" fill="#8D6E63"/>
+                            <ellipse cx="24" cy="24" rx="3" ry="3.5" fill="#5D4037"/>
+                            <ellipse cx="36" cy="24" rx="3" ry="3.5" fill="#5D4037"/>
+                            <ellipse cx="30" cy="32" rx="3" ry="2" fill="#4E342E"/>
+                        </svg>
+                    </div>
+                    <div class="current-pet-info">
+                        <div class="current-pet-name" id="currentPetName" data-i18n="settings.appearance.defaultName">默认比格犬</div>
+                        <div class="current-pet-type" id="currentPetType" data-i18n="settings.appearance.defaultType">内置SVG</div>
+                    </div>
+                </div>
+
+                <div class="section-title" data-i18n="settings.appearance.custom">自定义宠物外观</div>
+                <p style="font-size: 13px; color: #8D6E63; margin-bottom: 12px;" data-i18n="settings.appearance.hint">
+                    支持 PNG、JPG、GIF、WebP 格式。GIF 会自动播放动画。
+                </p>
+                
+                <div class="pet-preview" style="margin-bottom: 12px;">
+                    <div style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
+                        <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;">
+                            <div class="preview-label" style="margin-bottom: 8px; font-weight: 600;" data-i18n="settings.appearance.normalState">正常状态</div>
+                            <img id="normalPetPreview" class="preview-image" style="display: none;">
+                            <div id="normalPetPlaceholder" class="preview-placeholder" data-i18n="settings.appearance.notUploaded">未上传</div>
+                            <button class="btn btn-primary btn-small" id="importNormalPetBtn" style="margin-top: 8px;" data-i18n="settings.appearance.uploadNormal">
+                                上传正常状态
+                            </button>
+                        </div>
+                        <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;">
+                            <div class="preview-label" style="margin-bottom: 8px; font-weight: 600;" data-i18n="settings.appearance.excitedState">兴奋状态</div>
+                            <img id="excitedPetPreview" class="preview-image" style="display: none;">
+                            <div id="excitedPetPlaceholder" class="preview-placeholder" data-i18n="settings.appearance.notUploaded">未上传</div>
+                            <button class="btn btn-primary btn-small" id="importExcitedPetBtn" style="margin-top: 8px;" data-i18n="settings.appearance.uploadExcited">
+                                上传兴奋状态
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions-row">
+                    <button class="btn btn-danger" id="resetPetBtn" style="display: none;" data-i18n="settings.appearance.reset">
+                        恢复默认
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="sounds">
+            <div class="section">
+                <div class="section-title" data-i18n="settings.sounds.title">音效设置</div>
+                <div class="toggle-container">
+                    <span class="toggle-label" data-i18n="settings.sounds.useCustom">使用自定义音效</span>
+                    <div class="toggle-switch" id="customSoundToggle"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title" data-i18n="settings.sounds.list">音效列表</div>
+                <div class="sound-list" id="soundList">
+                    <div class="empty-state" id="soundEmptyState">
+                        <div class="empty-state-icon">🔇</div>
+                        <div class="empty-state-text" data-i18n="settings.sounds.empty">暂无自定义音效</div>
+                        <button class="btn btn-primary" id="importSoundBtn" data-i18n="settings.sounds.import">
+                            导入音效文件
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title" data-i18n="settings.sounds.add">添加音效</div>
+                <p style="font-size: 13px; color: #8D6E63; margin-bottom: 12px;" data-i18n="settings.sounds.hint">
+                    支持 MP3、WAV、OGG、M4A 格式。最多可添加 20 个音效，点击宠物时会随机播放。
+                </p>
+                <button class="btn btn-primary" id="addSoundBtn" data-i18n="settings.sounds.add">
+                    + 添加音效
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="reminders">
+            <div class="section">
+                <div class="section-title" data-i18n="settings.reminders.title">定时提醒</div>
+                <div class="reminder-list" id="reminderList">
+                    <div class="empty-state" id="reminderEmptyState">
+                        <div class="empty-state-icon">⏰</div>
+                        <div class="empty-state-text" data-i18n="settings.reminders.empty">暂无定时提醒</div>
+                        <button class="btn btn-primary" id="addReminderBtn" data-i18n="settings.reminders.add">
+                            + 添加提醒
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title" data-i18n="settings.reminders.add">添加提醒</div>
+                <p style="font-size: 13px; color: #8D6E63; margin-bottom: 12px;" data-i18n="settings.reminders.hint">
+                    设置定时提醒，时间到了宠物会兴奋地提醒你！
+                </p>
+                <button class="btn btn-primary" id="addReminderBtn2" data-i18n="settings.reminders.add">
+                    + 添加新提醒
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="general">
+            <div class="section">
+                <div class="section-title" data-i18n="settings.general.title">常规选项</div>
+                <div class="toggle-container">
+                    <span class="toggle-label" data-i18n="settings.general.autoStart">开机自动启动</span>
+                    <div class="toggle-switch" id="autoStartToggle"></div>
+                </div>
+                <div class="toggle-container">
+                    <span class="toggle-label" data-i18n="settings.general.showPet">显示宠物</span>
+                    <div class="toggle-switch active" id="petVisibleToggle"></div>
+                </div>
+                <div class="toggle-container">
+                    <span class="toggle-label" data-i18n="settings.general.language">语言</span>
+                    <select id="languageSelect" class="reminder-form-input" style="width: auto; min-width: 120px;">
+                        <option value="zh-CN">中文</option>
+                        <option value="en-US">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+            <div class="section-title" data-i18n="settings.general.shortcuts">快捷操作</div>
+            <div style="font-size: 13px; color: #8D6E63; line-height: 1.8;">
+                <p data-i18n="settings.general.shortcut1">• <strong>拖拽移动</strong>：按住宠物拖动</p>
+                <p data-i18n="settings.general.shortcut2">• <strong>点击叫唤</strong>：单击宠物播放音效</p>
+                <p data-i18n="settings.general.shortcut4">• <strong>显示/隐藏</strong>：双击托盘图标</p>
+            </div>
+        </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-text" data-i18n="settings.footer">桌面宠物 v1.0.0</div>
+            <div class="version" data-i18n="settings.footer.madeWith">Made with ❤️</div>
+        </div>
+    </div>
+
+    <div class="reminder-modal" id="reminderModal">
+        <div class="reminder-modal-content">
+            <div class="reminder-modal-title" id="reminderModalTitle" data-i18n="settings.reminders.modalTitle">添加提醒</div>
+            
+            <div class="reminder-form-group">
+                <label class="reminder-form-label" data-i18n="settings.reminders.titleLabel">提醒标题</label>
+                <input type="text" class="reminder-form-input" id="reminderTitle" placeholder="例如：该喝水了">
+            </div>
+            
+            <div class="reminder-form-group">
+                <label class="reminder-form-label" data-i18n="settings.reminders.timeLabel">提醒时间</label>
+                <input type="time" class="reminder-form-input" id="reminderTime">
+            </div>
+            
+            <div class="reminder-form-group">
+                <label class="reminder-form-label" data-i18n="settings.reminders.repeatLabel">重复方式</label>
+                <select class="reminder-form-input" id="reminderRepeat">
+                    <option value="once" data-i18n="settings.reminders.once">仅一次</option>
+                    <option value="daily" selected data-i18n="settings.reminders.daily">每天</option>
+                </select>
+            </div>
+            
+            <div class="reminder-form-actions">
+                <button class="btn btn-secondary" id="reminderCancelBtn" data-i18n="settings.reminders.cancel">取消</button>
+                <button class="btn btn-primary" id="reminderSaveBtn" data-i18n="settings.reminders.save">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

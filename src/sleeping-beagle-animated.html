@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>睡觉比格犬 - 动图</title>
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #FFF8F0 0%, #F5E6D3 100%);
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+
+        .pet-container {
+            position: relative;
+            width: 320px;
+            height: 200px;
+            cursor: grab;
+            user-select: none;
+            transform-origin: center bottom;
+            transition: filter 0.2s;
+        }
+
+        .pet-container:active {
+            cursor: grabbing;
+        }
+
+        .pet-container:hover {
+            filter: brightness(1.05);
+        }
+
+        .sleeping-beagle-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        /* === GROUND SHADOW === */
+        .pet-shadow {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 18px;
+            background: radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        /* === SLEEPING ANIMATIONS === */
+
+        @keyframes sleepingBreathe {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.012, 1.018) translateY(-2px); }
+        }
+
+        .body-sleeping {
+            animation: sleepingBreathe 4s ease-in-out infinite;
+            transform-origin: 200px 145px;
+        }
+
+        @keyframes earTwitch {
+            0%, 88%, 100% { transform: rotate(0deg); }
+            90% { transform: rotate(-4deg); }
+            93% { transform: rotate(2deg); }
+            96% { transform: rotate(0deg); }
+        }
+
+        .ear-left-sleeping {
+            animation: earTwitch 6s ease-in-out infinite;
+            transform-origin: 50px 100px;
+        }
+
+        .ear-right-sleeping {
+            animation: earTwitch 6s ease-in-out infinite;
+            animation-delay: 1.5s;
+            transform-origin: 155px 95px;
+        }
+
+        @keyframes tailWagSleep {
+            0%, 82%, 100% { transform: rotate(0deg); }
+            87% { transform: rotate(6deg); }
+            92% { transform: rotate(-4deg); }
+            96% { transform: rotate(2deg); }
+        }
+
+        .tail-sleeping {
+            animation: tailWagSleep 8s ease-in-out infinite;
+            transform-origin: 320px 140px;
+        }
+
+        /* === Zzz FLOATING === */
+        .zzz-container {
+            position: absolute;
+            top: 5px;
+            left: 55px;
+            pointer-events: none;
+            z-index: 8;
+        }
+
+        .zzz {
+            position: absolute;
+            font-size: 22px;
+            color: #8D6E63;
+            font-weight: bold;
+            opacity: 0;
+        }
+
+        @keyframes floatZ {
+            0% {
+                transform: translateY(0) translateX(0) scale(0.4);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-50px) translateX(25px) scale(1.1);
+                opacity: 0;
+            }
+        }
+
+        .zzz:nth-child(1) { animation: floatZ 3.2s ease-out infinite; }
+        .zzz:nth-child(2) { animation: floatZ 3.2s ease-out infinite; animation-delay: 1.07s; left: 18px; top: -12px; font-size: 20px; }
+        .zzz:nth-child(3) { animation: floatZ 3.2s ease-out infinite; animation-delay: 2.13s; left: 35px; top: -8px; font-size: 16px; }
+
+        /* === AWAKE OVERRIDES === */
+
+        .pet-container.awake .body-sleeping {
+            animation: wakeBodyBounce 0.5s ease-out forwards,
+                       awakeBreathe 1.8s ease-in-out 0.5s infinite;
+        }
+
+        @keyframes wakeBodyBounce {
+            0% { transform: scale(1) translateY(0); }
+            25% { transform: scale(1.04) translateY(-4px); }
+            50% { transform: scale(0.98) translateY(2px); }
+            75% { transform: scale(1.01) translateY(-1px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+
+        @keyframes awakeBreathe {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.02) translateY(-2px); }
+        }
+
+        .pet-container.awake .tail-sleeping {
+            animation: tailWagAwake 0.6s ease-in-out infinite;
+        }
+
+        @keyframes tailWagAwake {
+            0%, 100% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+        }
+
+        .pet-container.awake .ear-left-sleeping {
+            animation: earPerkLeft 0.3s ease-out forwards;
+        }
+
+        .pet-container.awake .ear-right-sleeping {
+            animation: earPerkRight 0.3s ease-out forwards;
+        }
+
+        @keyframes earPerkLeft {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-6deg); }
+        }
+
+        @keyframes earPerkRight {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(6deg); }
+        }
+
+        .pet-container.awake .zzz {
+            animation-play-state: paused;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* === SPEECH BUBBLE === */
+        .speech-bubble {
+            position: absolute;
+            top: -55px;
+            left: 90px;
+            transform: scale(0);
+            background: white;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            color: #5D4037;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        .pet-container.awake .speech-bubble {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* === HEARTS === */
+        .hearts {
+            position: absolute;
+            top: 10px;
+            left: 90px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 5;
+        }
+
+        .pet-container.awake .hearts {
+            opacity: 1;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 18px;
+            animation: floatHeart 1s ease-out forwards;
+        }
+
+        @keyframes floatHeart {
+            0% { transform: translateY(0) scale(0); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1); opacity: 0; }
+        }
+
+        /* === SOUND WAVES === */
+        .sound-waves {
+            position: absolute;
+            right: 30px;
+            top: 50px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pet-container.awake .sound-waves {
+            opacity: 1;
+        }
+
+        .sound-wave {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #E57373;
+            border-radius: 50%;
+            animation: soundWave 0.8s ease-out infinite;
+        }
+
+        .sound-wave:nth-child(2) { animation-delay: 0.2s; }
+        .sound-wave:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes soundWave {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* === EYE/MOUTH TRANSITIONS === */
+        .eyes-closed, .eyes-open,
+        .mouth-sleeping, .mouth-awake {
+            transition: opacity 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="pet-container" id="petContainer">
+        <!-- Speech bubble -->
+        <div class="speech-bubble" id="speechBubble">嗯？</div>
+
+        <!-- Hearts container -->
+        <div class="hearts" id="hearts"></div>
+
+        <!-- Sound waves -->
+        <div class="sound-waves">
+            <div class="sound-wave"></div>
+            <div class="sound-wave"></div>
+            <div class="sound-wave"></div>
+        </div>
+
+        <!-- Zzz symbols -->
+        <div class="zzz-container">
+            <span class="zzz">Z</span>
+            <span class="zzz">z</span>
+            <span class="zzz">z</span>
+        </div>
+
+        <!-- Sleeping beagle SVG -->
+        <svg class="sleeping-beagle-svg" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ground shadow -->
+            <ellipse cx="200" cy="215" rx="150" ry="18" fill="rgba(0,0,0,0.10)"/>
+
+            <!-- Tail -->
+            <g class="tail-sleeping">
+                <path d="M330 135 Q350 115 345 95 Q342 88 335 88 Q325 95 320 130"
+                      fill="#F5E6D3" stroke="#D7CCC8" stroke-width="1"/>
+                <ellipse cx="345" cy="95" rx="12" ry="18" fill="#F5E6D3" transform="rotate(-20 345 95)"/>
+                <ellipse cx="348" cy="88" rx="8" ry="12" fill="#FFF8F0" transform="rotate(-20 348 88)"/>
+            </g>
+
+            <!-- Hind legs -->
+            <ellipse cx="315" cy="175" rx="30" ry="25" fill="#FFF8F0"/>
+            <ellipse cx="320" cy="180" rx="22" ry="16" fill="#E8D5C4"/>
+            <ellipse cx="285" cy="180" rx="28" ry="22" fill="#FFF8F0"/>
+            <ellipse cx="288" cy="185" rx="20" ry="14" fill="#E8D5C4"/>
+
+            <!-- Body -->
+            <g class="body-sleeping">
+                <!-- Back/saddle stripe -->
+                <ellipse cx="230" cy="115" rx="100" ry="40" fill="#5D4037"/>
+                <!-- Body side -->
+                <ellipse cx="200" cy="145" rx="110" ry="45" fill="#F5E6D3"/>
+                <!-- Belly -->
+                <ellipse cx="180" cy="165" rx="70" ry="30" fill="#FFF8F0"/>
+                <ellipse cx="195" cy="158" rx="45" ry="22" fill="#FFFFFF"/>
+                <!-- Body spots -->
+                <ellipse cx="270" cy="135" rx="35" ry="25" fill="#E8D5C4"/>
+                <ellipse cx="150" cy="140" rx="25" ry="20" fill="#E8D5C4"/>
+            </g>
+
+            <!-- Front paws -->
+            <ellipse cx="258" cy="185" rx="18" ry="14" fill="#FFF8F0"/>
+            <ellipse cx="262" cy="188" rx="12" ry="8" fill="#E8D5C4"/>
+            <!-- Toe beans -->
+            <ellipse cx="254" cy="183" rx="3" ry="4" fill="#8D6E63"/>
+            <ellipse cx="261" cy="183" rx="3" ry="4" fill="#8D6E63"/>
+            <ellipse cx="268" cy="183" rx="3" ry="4" fill="#8D6E63"/>
+
+            <ellipse cx="230" cy="190" rx="16" ry="12" fill="#FFF8F0"/>
+            <ellipse cx="233" cy="193" rx="10" ry="7" fill="#E8D5C4"/>
+
+            <!-- Head -->
+            <g class="head-sleeping">
+                <!-- Head base -->
+                <ellipse cx="100" cy="120" rx="60" ry="45" fill="#F5E6D3"/>
+                <!-- Face white -->
+                <ellipse cx="95" cy="135" rx="38" ry="28" fill="#FFF8F0"/>
+                <ellipse cx="90" cy="128" rx="25" ry="18" fill="#FFFFFF"/>
+
+                <!-- Left ear -->
+                <g class="ear-left-sleeping">
+                    <ellipse cx="45" cy="100" rx="30" ry="45" fill="#8D6E63" transform="rotate(-20 45 100)"/>
+                    <ellipse cx="50" cy="105" rx="20" ry="32" fill="#A1887F" transform="rotate(-20 50 105)"/>
+                </g>
+
+                <!-- Right ear -->
+                <g class="ear-right-sleeping">
+                    <ellipse cx="155" cy="95" rx="30" ry="45" fill="#8D6E63" transform="rotate(15 155 95)"/>
+                    <ellipse cx="150" cy="100" rx="20" ry="32" fill="#A1887F" transform="rotate(15 150 100)"/>
+                </g>
+
+                <!-- Eyebrows -->
+                <path d="M70 100 Q80 95 90 100" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M110 100 Q120 95 130 100" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+                <!-- Closed eyes (sleeping) -->
+                <g class="eyes-closed">
+                    <path d="M75 115 Q85 122 95 115" stroke="#5D4037" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M105 115 Q115 122 125 115" stroke="#5D4037" stroke-width="3" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- Open eyes (awake) -->
+                <g class="eyes-open" style="display: none;">
+                    <ellipse cx="85" cy="115" rx="10" ry="12" fill="#FFFFFF"/>
+                    <ellipse cx="87" cy="116" rx="6" ry="7" fill="#5D4037"/>
+                    <ellipse cx="89" cy="114" rx="2" ry="2" fill="#FFFFFF"/>
+                    <ellipse cx="115" cy="115" rx="10" ry="12" fill="#FFFFFF"/>
+                    <ellipse cx="117" cy="116" rx="6" ry="7" fill="#5D4037"/>
+                    <ellipse cx="119" cy="114" rx="2" ry="2" fill="#FFFFFF"/>
+                </g>
+
+                <!-- Nose -->
+                <ellipse cx="100" cy="145" rx="12" ry="10" fill="#4E342E"/>
+                <ellipse cx="98" cy="143" rx="4" ry="3" fill="#6D4C41"/>
+                <ellipse cx="102" cy="143" rx="4" ry="3" fill="#6D4C41"/>
+
+                <!-- Sleeping mouth -->
+                <g class="mouth-sleeping">
+                    <path d="M100 155 Q95 162 88 160" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M100 155 Q105 162 112 160" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- Awake mouth -->
+                <g class="mouth-awake" style="display: none;">
+                    <ellipse cx="100" cy="158" rx="10" ry="7" fill="#5D4037"/>
+                    <ellipse cx="100" cy="161" rx="7" ry="4" fill="#E57373"/>
+                    <path d="M100 155 Q96 160 92 158" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M100 155 Q104 160 108 158" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </g>
+            </g>
+        </svg>
+
+        <!-- Ground shadow (CSS) -->
+        <div class="pet-shadow"></div>
+    </div>
+
+    <script>
+        (function() {
+            var container = document.getElementById('petContainer');
+            var speechBubble = document.getElementById('speechBubble');
+            var hearts = document.getElementById('hearts');
+            var eyesClosed = document.querySelector('.eyes-closed');
+            var eyesOpen = document.querySelector('.eyes-open');
+            var mouthSleeping = document.querySelector('.mouth-sleeping');
+            var mouthAwake = document.querySelector('.mouth-awake');
+
+            var state = {
+                isSleeping: true,
+                wakeTimeout: null,
+                isDragging: false,
+                dragDistance: 0,
+                petX: 0,
+                petY: 0,
+                dragStartX: 0,
+                dragStartY: 0,
+                audioContext: null
+            };
+
+            function playSoftBark() {
+                if (!state.audioContext) {
+                    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                var ctx = state.audioContext;
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+
+                var now = ctx.currentTime;
+                var duration = 0.18;
+
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                var filter = ctx.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + duration);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + duration);
+            }
+
+            function createHeart() {
+                var heart = document.createElement('span');
+                heart.className = 'heart';
+                heart.textContent = '❤️';
+                heart.style.left = (Math.random() * 60 - 30) + 'px';
+                heart.style.animationDelay = (Math.random() * 0.2) + 's';
+                hearts.appendChild(heart);
+                setTimeout(function() {
+                    heart.remove();
+                }, 1000);
+            }
+
+            function wakeUp() {
+                if (!state.isSleeping) return;
+
+                if (state.wakeTimeout) clearTimeout(state.wakeTimeout);
+
+                state.isSleeping = false;
+                container.classList.add('awake');
+
+                eyesClosed.style.display = 'none';
+                eyesOpen.style.display = 'block';
+                mouthSleeping.style.display = 'none';
+                mouthAwake.style.display = 'block';
+
+                speechBubble.textContent = '嗯？';
+
+                playSoftBark();
+
+                for (var i = 0; i < 3; i++) {
+                    setTimeout(createHeart, i * 120);
+                }
+
+                state.wakeTimeout = setTimeout(goToSleep, 2500);
+            }
+
+            function goToSleep() {
+                if (state.isSleeping) return;
+
+                state.isSleeping = true;
+                container.classList.remove('awake');
+
+                eyesOpen.style.display = 'none';
+                eyesClosed.style.display = 'block';
+                mouthAwake.style.display = 'none';
+                mouthSleeping.style.display = 'block';
+
+                if (state.wakeTimeout) clearTimeout(state.wakeTimeout);
+            }
+
+            function handleClick() {
+                if (state.dragDistance > 5) return;
+
+                if (state.isSleeping) {
+                    wakeUp();
+                } else {
+                    if (state.wakeTimeout) clearTimeout(state.wakeTimeout);
+                    playSoftBark();
+                    for (var i = 0; i < 2; i++) {
+                        setTimeout(createHeart, i * 100);
+                    }
+                    state.wakeTimeout = setTimeout(goToSleep, 2500);
+                }
+            }
+
+            container.addEventListener('mousedown', function(e) {
+                state.isDragging = true;
+                state.dragDistance = 0;
+                state.dragStartX = e.clientX - state.petX;
+                state.dragStartY = e.clientY - state.petY;
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!state.isDragging) return;
+                var dx = e.clientX - state.dragStartX;
+                var dy = e.clientY - state.dragStartY;
+                state.dragDistance = Math.sqrt(dx * dx + dy * dy);
+                state.petX = dx;
+                state.petY = dy;
+                container.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (!state.isDragging) return;
+                state.isDragging = false;
+
+                if (state.dragDistance <= 5) {
+                    handleClick();
+                }
+            });
+
+            container.addEventListener('mouseleave', function() {
+                state.isDragging = false;
+            });
+        })();
+    </script>
+</body>
+</html>
