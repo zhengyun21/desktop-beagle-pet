@@ -1,4 +1,16 @@
-# 桌面宠物 - 比格犬
+
+# 桌面宠物 - 比格犬 / Desktop Beagle Pet
+
+[![GitHub stars](https://img.shields.io/github/stars/zhengyun21/desktop-beagle-pet?style=social)](https://github.com/zhengyun21/desktop-beagle-pet/stargazers)
+
+## 🌍 选择语言 / Choose Language
+
+- [中文](#中文)
+- [English](#english)
+
+---
+
+## 中文
 
 ## 🐶 项目简介
 
@@ -112,4 +124,123 @@ npm run pack
 
 ---
 
-祝你玩得开心！ 🐾
+## English
+
+## 🐶 Project Introduction
+
+A cute desktop pet application with customizable appearance and sound effects!
+
+## 📋 System Requirements
+
+- Windows 10 or later
+- Node.js 16.x or later
+
+## 🚀 Quick Start
+
+### Method 1: One-click Launch (Recommended)
+
+Just double-click **`启动.bat`**!
+
+The script will automatically:
+1. Check if Node.js is installed
+2. Install dependencies (first run)
+3. Create icon assets
+4. Launch the desktop pet
+
+### Method 2: Manual Installation
+
+```bash
+# 1. Navigate to project directory
+cd d:\Maven\desktop-dog-pet
+
+# 2. Install dependencies
+npm install
+
+# 3. Start the application
+npm start
+```
+
+## 📦 Features
+
+| Feature | Description |
+|---------|-------------|
+| **Drag to Move** | Hold and drag the pet anywhere on screen |
+| **Click to Bark** | Click the pet to play sound + excited animation |
+| **Custom Sounds** | Import MP3/WAV/OGG/M4A, plays randomly |
+| **Custom Appearance** | Import PNG/GIF/WebP to replace default beagle |
+| **System Tray** | Runs in background, manage via right-click menu |
+| **Double-click Settings** | Quick access to settings panel |
+
+## 🔧 Customize Your Pet
+
+### 1. Custom Appearance
+- Double-click pet → 「Appearance Settings」
+- Import images (PNG/GIF/WebP recommended)
+- Supports GIF animations!
+
+### 2. Custom Sounds
+- Double-click pet → 「Sound Settings」
+- Click 「Add Sound」 to import audio files
+- Import multiple, plays randomly on click
+
+## 📁 Project Structure
+
+```
+desktop-dog-pet/
+├── 启动.bat           # One-click launch script
+├── main.js            # Main process (Electron)
+├── preload.js         # Security bridge script
+├── package.json       # Project config
+├── assets/            # Assets folder
+│   └── create-icons.js # Icon generation script
+└── src/
+    ├── index.html     # Pet main window
+    ├── renderer.js    # Pet interaction logic
+    ├── settings.html  # Settings interface
+    └── settings.js    # Settings logic
+```
+
+## ⚠️ FAQ
+
+### Q: Error `'electron' is not recognized`
+A: Run `npm install` to install dependencies, or just double-click `启动.bat`
+
+### Q: Node.js not detected
+A: Download and install Node.js LTS: https://nodejs.org/
+
+### Q: How to build EXE file?
+A: Run `npm run build`, EXE will be in `dist/` directory
+
+### Q: Pet not visible?
+A: Check system tray (bottom-right), double-click icon to show/hide
+
+## 📝 Development Guide
+
+### Start Development Mode
+```bash
+npm start
+```
+
+### Build Installer
+```bash
+npm run build
+```
+
+### Package Only (No Installer)
+```bash
+npm run pack
+```
+
+## 👋 Exit Application
+
+1. Right-click the 「Desktop Pet」 icon in system tray
+2. Select 「Exit」
+
+---
+
+Enjoy! 🐾
+
+---
+
+[![GitHub stars](https://img.shields.io/github/stars/zhengyun21/desktop-beagle-pet?style=social)](https://github.com/zhengyun21/desktop-beagle-pet/stargazers)
+
