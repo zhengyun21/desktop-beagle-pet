@@ -23,6 +23,7 @@ let animationFrame = null;
 let audioContext = null;
 let customSounds = [];
 let currentAudio = null;
+let speechBubbleHideTimer = null;
 
 // 语言相关
 let translations = {};
@@ -344,6 +345,14 @@ pet.addEventListener('click', (e) => {
         }
 
         setExcited(true);
+        
+        clearTimeout(speechBubbleHideTimer);
+        speechBubble.textContent = translations['pet.bark'] || '汪汪！';
+        speechBubble.style.display = 'block';
+        
+        speechBubbleHideTimer = setTimeout(() => {
+            speechBubble.style.display = 'none';
+        }, 3000);
 
         setTimeout(() => {
             setExcited(false);
@@ -400,6 +409,7 @@ function showReminder(reminder) {
     
     setExcited(true);
     
+    clearTimeout(speechBubbleHideTimer);
     speechBubble.textContent = reminder.title;
     speechBubble.style.display = 'block';
     
@@ -409,7 +419,7 @@ function showReminder(reminder) {
         playDefaultBarkSound();
     }
     
-    setTimeout(() => {
+    speechBubbleHideTimer = setTimeout(() => {
         speechBubble.style.display = 'none';
     }, 5000);
     
