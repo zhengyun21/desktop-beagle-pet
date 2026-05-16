@@ -37,7 +37,7 @@
 
 ```bash
 # 1. 进入项目目录
-cd d:\Maven\desktop-dog-pet
+cd .\desktop-dog-pet
 
 # 2. 安装依赖
 npm install
@@ -151,7 +151,7 @@ The script will automatically:
 
 ```bash
 # 1. Navigate to project directory
-cd d:\Maven\desktop-dog-pet
+cd .\desktop-dog-pet
 
 # 2. Install dependencies
 npm install
