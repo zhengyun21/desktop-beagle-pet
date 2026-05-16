@@ -1,4 +1,5 @@
 module.exports = {
+  "settings.header": "桌面宠物设置",
   // 托盘菜单
   "tray.show": "显示宠物",
   "tray.hide": "隐藏宠物",

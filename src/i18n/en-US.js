@@ -1,4 +1,5 @@
 module.exports = {
+  "settings.header": "Desktop Pet Settings",
   // 托盘菜单
   "tray.show": "Show Pet",
   "tray.hide": "Hide Pet",
