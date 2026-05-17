@@ -217,6 +217,7 @@ function createSettingsWindow() {
         center: true,
         title: '桌面宠物设置',
         icon: getTrayIcon(),
+        alwaysOnTop: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
