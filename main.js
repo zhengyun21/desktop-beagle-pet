@@ -3,6 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const Store = require('electron-store');
 const i18n = require('./src/i18n/index.js');
+const { setupGlobalErrorHandlers, logError, AppError, SecurityError } = require('./src/errors/index.js');
+const { validatePathInDirectory, validateReminder, validateLanguage, validateConfig } = require('./src/validators/index.js');
+const { setupMemoryMonitoring, registerTimer, unregisterTimer, registerWindow } = require('./src/memory/index.js');
 
 const store = new Store({
     name: 'desktop-pet-config',
@@ -144,9 +147,25 @@ function copySoundFiles(filePaths) {
 }
 
 function deleteFileIfExists(filePath) {
+    try {
+        validatePathInDirectory(filePath, customPetsPath);
+    } catch (err) {
+        try {
+            validatePathInDirectory(filePath, customSoundsPath);
+        } catch (err2) {
+            logError(new SecurityError('File path is not in allowed directory for deletion', { filePath }), 'deleteFileIfExists');
+            return false;
+        }
+    }
+
     if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        return true;
+        try {
+            fs.unlinkSync(filePath);
+            return true;
+        } catch (err) {
+            logError(err, 'deleteFileIfExists');
+            return false;
+        }
     }
     return false;
 }
@@ -183,6 +202,7 @@ function createMainWindow() {
     });
 
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+    registerWindow(mainWindow, 'main');
 
     mainWindow.once('ready-to-show', () => {
         if (store.get('petVisible')) {
@@ -226,6 +246,7 @@ function createSettingsWindow() {
     });
 
     settingsWindow.loadFile(path.join(__dirname, 'src', 'settings.html'));
+    registerWindow(settingsWindow, 'settings');
 
     settingsWindow.on('closed', () => {
         settingsWindow = null;
@@ -582,7 +603,10 @@ ipcMain.handle('get-translations', () => {
 });
 
 function clearAllReminderTimers() {
-    reminderTimers.forEach(timer => clearTimeout(timer));
+    reminderTimers.forEach(timer => {
+        clearTimeout(timer);
+        unregisterTimer(timer);
+    });
     reminderTimers = [];
 }
 
@@ -602,6 +626,7 @@ function scheduleReminder(reminder) {
     const delay = nextTime.getTime() - now.getTime();
     
     const timer = setTimeout(() => {
+        unregisterTimer(timer);
         triggerReminder(reminder);
         
         if (reminder.repeat === 'daily') {
@@ -609,6 +634,7 @@ function scheduleReminder(reminder) {
         }
     }, delay);
     
+    registerTimer(timer, `reminder-${reminder.id}`, reminder.title);
     reminderTimers.push(timer);
 }
 
@@ -686,6 +712,9 @@ app.whenReady().then(() => {
     
     // 清理孤立资源
     cleanupOrphanedResources();
+    
+    // 启动内存监控
+    setupMemoryMonitoring();
 });
 
 app.on('window-all-closed', (e) => {
@@ -702,10 +731,4 @@ app.on('before-quit', () => {
     isQuitting = true;
 });
 
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+setupGlobalErrorHandlers();
